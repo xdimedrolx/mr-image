@@ -26,7 +26,6 @@ app.directive('mrImageSelector', function(){
             aspectRatio: '=?mrAspectRatio'
         },
         link: function(scope, element) {
-
             scope.selector = scope.selector || {};
 
             var selector = scope.selector;
@@ -37,6 +36,7 @@ app.directive('mrImageSelector', function(){
             });
 
             var $document = angular.element(document);
+
 
             //
             // Initialize
@@ -548,6 +548,62 @@ app.directive('mrImageSelector', function(){
                 canvas.height = height;
                 context.drawImage(scope.$parent.image, selector.x1 * scale, selector.y1 * scale, width, height, 0, 0, width, height);
                 return canvas.toDataURL('image/png');
+            }
+
+            function setRealCoords(coords)
+            {
+                var realHeight = scope.$parent.image.naturalHeight,
+                    realWidth = scope.$parent.image.naturalWidth,
+                    height = element.css('height').replace('px', ''),
+                    width  = element.css('width').replace('px', '');
+
+                coords.x1 = Math.round(coords.x1 * width / realWidth);
+                coords.x2 = Math.round(coords.x2 * width / realWidth);
+                coords.y1 = Math.round(coords.y1 * height / realHeight);
+                coords.y2 = Math.round(coords.y2 * height / realHeight);
+
+                update(coords.x1, coords.y1, coords.x2, coords.y2);
+            }
+
+            function getRealCoords()
+            {
+                var realHeight = scope.$parent.image.naturalHeight,
+                    realWidth = scope.$parent.image.naturalWidth,
+                    height = element.css('height').replace('px', ''),
+                    width  = element.css('width').replace('px', '');
+
+                return {
+                    x1: Math.round(selector.x1 * realWidth / width),
+                    y1: Math.round(selector.y1 * realHeight / height),
+                    x2: Math.round(selector.x2 * realWidth / width),
+                    y2: Math.round(selector.y2 * realHeight / height)
+                };
+            }
+
+            selector.setRealCoords = setRealCoords;
+            selector.getRealCoords = getRealCoords;
+
+            function initRealCoords(coords)
+            {
+                var image = angular.element(scope.$parent.image);
+                image.on('load', function () {
+                    setRealCoords(coords);
+                });
+            }
+
+            if (selector.enabled) {
+                setTimeout(function() {
+                    if (!selector.realCoords) {
+                        selector.realCoords = {
+                            x1: 0,
+                            y1: 0,
+                            x2: Number.MAX_VALUE,
+                            y2: Number.MAX_VALUE
+                        };
+                    }
+                    // todo: add check coords
+                    initRealCoords(selector.realCoords);
+                }, 0);
             }
         }
     };
