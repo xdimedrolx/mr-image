@@ -22,11 +22,13 @@ app.directive('mrImageSelector', function(){
         restrict: 'A',
         scope: {
             selector: '=?mrModel',
+            realCoords: '=?mrRealCoords',
             src: '=?mrSrc',
             aspectRatio: '=?mrAspectRatio'
         },
         link: function(scope, element) {
-            scope.selector = scope.selector || {};
+            scope.selector = scope.selector || { enabled: true };
+            scope.realCoords = scope.realCoords || {};
 
             var selector = scope.selector;
             var aspectRatio = scope.aspectRatio;
@@ -37,31 +39,30 @@ app.directive('mrImageSelector', function(){
 
             var $document = angular.element(document);
 
-
             //
             // Initialize
             //
 
             var $rect = angular.element('<div class="mr-box">' +
-            '<div class="mr-line top"></div>'    +
-            '<div class="mr-line bottom"></div>' +
-            '<div class="mr-line left"></div>'   +
-            '<div class="mr-line right"></div>'  +
-            '</div>');
+                '<div class="mr-line top"></div>'    +
+                '<div class="mr-line bottom"></div>' +
+                '<div class="mr-line left"></div>'   +
+                '<div class="mr-line right"></div>'  +
+                '</div>');
 
             var $lines = angular.element('<div class="mr-drag-line n"></div>' +
-            '<div class="mr-drag-line s"></div>' +
-            '<div class="mr-drag-line w"></div>' +
-            '<div class="mr-drag-line e"></div>');
+                '<div class="mr-drag-line s"></div>' +
+                '<div class="mr-drag-line w"></div>' +
+                '<div class="mr-drag-line e"></div>');
 
             var $handles = angular.element('<div class="mr-drag-handle nw"></div>' +
-            '<div class="mr-drag-handle n"></div>'  +
-            '<div class="mr-drag-handle ne"></div>' +
-            '<div class="mr-drag-handle w"></div>'  +
-            '<div class="mr-drag-handle e"></div>'  +
-            '<div class="mr-drag-handle sw"></div>' +
-            '<div class="mr-drag-handle s"></div>'  +
-            '<div class="mr-drag-handle se"></div>');
+                '<div class="mr-drag-handle n"></div>'  +
+                '<div class="mr-drag-handle ne"></div>' +
+                '<div class="mr-drag-handle w"></div>'  +
+                '<div class="mr-drag-handle e"></div>'  +
+                '<div class="mr-drag-handle sw"></div>' +
+                '<div class="mr-drag-handle s"></div>'  +
+                '<div class="mr-drag-handle se"></div>');
 
             $rect.append($lines).append($handles);
 
@@ -443,6 +444,8 @@ app.directive('mrImageSelector', function(){
                 selector.x2 = width - position.right;
                 selector.y2 = height - position.bottom;
 
+                scope.realCoords = getRealCoords();
+
                 selectorWatch = scope.$watch('selector', updateSelector, true);
             }
 
@@ -481,6 +484,7 @@ app.directive('mrImageSelector', function(){
 
             function clear() {
                 selector.x1 = selector.x2 = selector.y1 = selector.y2 = undefined;
+                scope.realCoords = {};
                 $rect.css('display', 'none');
                 $shadow.css('display', 'none');
             }
@@ -488,6 +492,11 @@ app.directive('mrImageSelector', function(){
             function isPositionUndefined() {
                 return angular.isUndefined(selector.x1) && angular.isUndefined(selector.x2)
                     && angular.isUndefined(selector.y1) && angular.isUndefined(selector.y2);
+            }
+
+            function isCoordsUndefined(coords) {
+                return angular.isUndefined(coords.x1) && angular.isUndefined(coords.x2)
+                    && angular.isUndefined(coords.y1) && angular.isUndefined(coords.y2);
             }
 
             function isPositionFinite() {
@@ -513,7 +522,7 @@ app.directive('mrImageSelector', function(){
             function updateSelectorEnabled(enabled) {
                 selector.enabled = typeof enabled !== 'boolean' ? true : enabled;
 
-                if (selector.enabled && isPositionFinite()){
+                if (selector.enabled && (isPositionFinite() || !isCoordsUndefined(scope.realCoords))){
                     bind();
                     element.css('z-index', 300);
                     $rect.css('display', 'block');
@@ -557,6 +566,14 @@ app.directive('mrImageSelector', function(){
                     height = element.css('height').replace('px', ''),
                     width  = element.css('width').replace('px', '');
 
+                if (angular.isUndefined(coords.x2)) {
+                    coords.x2 = realWidth;
+                }
+
+                if (angular.isUndefined(coords.y2)) {
+                    coords.y2 = realHeight;
+                }
+
                 coords.x1 = Math.round(coords.x1 * width / realWidth);
                 coords.x2 = Math.round(coords.x2 * width / realWidth);
                 coords.y1 = Math.round(coords.y1 * height / realHeight);
@@ -583,28 +600,23 @@ app.directive('mrImageSelector', function(){
             selector.setRealCoords = setRealCoords;
             selector.getRealCoords = getRealCoords;
 
-            function initRealCoords(coords)
-            {
+            // Init
+            setTimeout(function() {
                 var image = angular.element(scope.$parent.image);
-                image.on('load', function () {
-                    setRealCoords(coords);
-                });
-            }
 
-            if (selector.enabled) {
-                setTimeout(function() {
-                    if (!selector.realCoords) {
-                        selector.realCoords = {
-                            x1: 0,
-                            y1: 0,
-                            x2: Number.MAX_VALUE,
-                            y2: Number.MAX_VALUE
-                        };
+                image.on('load', function () {
+                    if (selector.enabled) {
+                        if (!scope.realCoords || isCoordsUndefined(scope.realCoords)) {
+                            scope.realCoords = {
+                                x1: 0,
+                                y1: 0
+                            };
+                        }
+                        setRealCoords(scope.realCoords);
+                        scope.$apply();
                     }
-                    // todo: add check coords
-                    initRealCoords(selector.realCoords);
-                }, 0);
-            }
+                });
+            }, 0);
         }
     };
 });
