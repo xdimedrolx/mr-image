@@ -17,13 +17,17 @@ app.directive('mrImage', function() {
         '<div mr-image-selector mr-model="selector" mr-real-coords="realCoords" mr-aspect-ratio="aspectRatio" style="height: {{scaleValue(height, scale) + \'px\'}}; width: {{scaleValue(width, scale) + \'px\'}}"></div>' +
         '<div mr-image-drawer mr-model="drawer" style="height: {{scaleValue(height, scale) + \'px\'}}; width: {{scaleValue(width, scale) + \'px\'}}"></div>' +
         '<img ng-src="{{src}}" width="{{scaleValue(width, scale)}}" height="{{scaleValue(height, scale)}}">',
-
+        controller: function($scope) {
+            $scope.image = new Image();
+            $scope.setLoadedCallback = function(clb) {
+                $scope.loadedCallback = clb;
+            }
+        },
         link: function (scope, element) {
 
             element.addClass('mr-image');
 
             function setImageSize(src) {
-                scope.image = new Image();
                 scope.image.onload = function () {
                     scope.$apply(function () {
                         scope.height = scope.height || scope.image.height;
@@ -39,6 +43,9 @@ app.directive('mrImage', function() {
                         element.css('width', scope.scaleValue(scope.width, scope.scale) + 'px');
                         element.css('height', scope.scaleValue(scope.height, scope.scale) + 'px');
                     });
+                    if (angular.isFunction(scope.loadedCallback)) {
+                        scope.loadedCallback();
+                    }
                 };
                 scope.image.src = src;
             }

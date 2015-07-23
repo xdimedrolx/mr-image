@@ -30,6 +30,13 @@ app.directive('mrImageSelector', function(){
             scope.selector = scope.selector || { enabled: true };
             scope.realCoords = scope.realCoords || {};
 
+            if (isCoordsUndefined(scope.realCoords)) {
+                scope.realCoords = {
+                    x1: 0,
+                    y1: 0
+                };
+            }
+
             var selector = scope.selector;
             var aspectRatio = scope.aspectRatio;
 
@@ -559,8 +566,7 @@ app.directive('mrImageSelector', function(){
                 return canvas.toDataURL('image/png');
             }
 
-            function setRealCoords(coords)
-            {
+            function setRealCoords(coords) {
                 var realHeight = scope.$parent.image.naturalHeight,
                     realWidth = scope.$parent.image.naturalWidth,
                     height = element.css('height').replace('px', ''),
@@ -582,8 +588,7 @@ app.directive('mrImageSelector', function(){
                 update(coords.x1, coords.y1, coords.x2, coords.y2);
             }
 
-            function getRealCoords()
-            {
+            function getRealCoords() {
                 var realHeight = scope.$parent.image.naturalHeight,
                     realWidth = scope.$parent.image.naturalWidth,
                     height = element.css('height').replace('px', ''),
@@ -600,23 +605,29 @@ app.directive('mrImageSelector', function(){
             selector.setRealCoords = setRealCoords;
             selector.getRealCoords = getRealCoords;
 
-            // Init
-            setTimeout(function() {
-                var image = angular.element(scope.$parent.image);
-
-                image.on('load', function () {
-                    if (selector.enabled) {
-                        if (!scope.realCoords || isCoordsUndefined(scope.realCoords)) {
-                            scope.realCoords = {
-                                x1: 0,
-                                y1: 0
-                            };
-                        }
+            function initRealCoords() {
+                if (selector.enabled) {
+                    scope.$apply(function() {
                         setRealCoords(scope.realCoords);
-                        scope.$apply();
-                    }
-                });
-            }, 0);
+                    });
+                }
+            }
+
+            // Init
+            //setTimeout(function () {
+            var image = angular.element(scope.$parent.image);
+
+            if (image[0].complete && image[0].naturalWidth > 0) {
+                console.log('load image from cache');
+                initRealCoords();
+            } else {
+                scope.$parent.setLoadedCallback(initRealCoords.bind(this));
+                //image.on('load', function () {
+                //    console.log('load image');
+                //    initRealCoords();
+                //});
+            }
+            //}, 0)
         }
     };
 });
