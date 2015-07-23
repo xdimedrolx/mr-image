@@ -17,12 +17,12 @@ app.directive('mrImage', function() {
         '<div mr-image-selector mr-model="selector" mr-real-coords="realCoords" mr-aspect-ratio="aspectRatio" style="height: {{scaleValue(height, scale) + \'px\'}}; width: {{scaleValue(width, scale) + \'px\'}}"></div>' +
         '<div mr-image-drawer mr-model="drawer" style="height: {{scaleValue(height, scale) + \'px\'}}; width: {{scaleValue(width, scale) + \'px\'}}"></div>' +
         '<img ng-src="{{src}}" width="{{scaleValue(width, scale)}}" height="{{scaleValue(height, scale)}}">',
-        controller: function($scope) {
+        controller: ["$scope", function($scope) {
             $scope.image = new Image();
             $scope.setLoadedCallback = function(clb) {
                 $scope.loadedCallback = clb;
             }
-        },
+        }],
         link: function (scope, element) {
 
             element.addClass('mr-image');
