@@ -11,10 +11,11 @@ app.directive('mrImage', function() {
             aspectRatio: '=?mrAspectRatio',
             scale: '=?mrScale',
             drawer: '=?mrDrawer',
-            selector: '=?mrSelector'
+            selector: '=?mrSelector',
+            imageSize: '=?mrImageSize'
         },
         template:
-        '<div mr-image-selector mr-model="selector" mr-real-coords="realCoords" mr-aspect-ratio="aspectRatio" style="height: {{scaleValue(height, scale) + \'px\'}}; width: {{scaleValue(width, scale) + \'px\'}}"></div>' +
+        '<div mr-image-selector mr-model="selector" mr-image-size="imageSize" mr-real-coords="realCoords" mr-aspect-ratio="aspectRatio" style="height: {{scaleValue(height, scale) + \'px\'}}; width: {{scaleValue(width, scale) + \'px\'}}"></div>' +
         '<div mr-image-drawer mr-model="drawer" style="height: {{scaleValue(height, scale) + \'px\'}}; width: {{scaleValue(width, scale) + \'px\'}}"></div>' +
         '<img ng-src="{{src}}" width="{{scaleValue(width, scale)}}" height="{{scaleValue(height, scale)}}">',
         controller: ["$scope", function($scope) {

@@ -24,11 +24,13 @@ app.directive('mrImageSelector', function(){
             selector: '=?mrModel',
             realCoords: '=?mrRealCoords',
             src: '=?mrSrc',
-            aspectRatio: '=?mrAspectRatio'
+            aspectRatio: '=?mrAspectRatio',
+            imageSize: '=?mrImageSize'
         },
         link: function(scope, element) {
             scope.selector = scope.selector || { enabled: true };
             scope.realCoords = scope.realCoords || {};
+            scope.imageSize = scope.imageSize || {};
 
             if (isCoordsUndefined(scope.realCoords)) {
                 scope.realCoords = {
@@ -567,45 +569,48 @@ app.directive('mrImageSelector', function(){
             }
 
             function setRealCoords(coords) {
-                var realHeight = scope.$parent.image.naturalHeight,
-                    realWidth = scope.$parent.image.naturalWidth,
-                    height = element.css('height').replace('px', ''),
+                var height = element.css('height').replace('px', ''),
                     width  = element.css('width').replace('px', '');
 
                 if (angular.isUndefined(coords.x2)) {
-                    coords.x2 = realWidth;
+                    coords.x2 = scope.imageSize.width;
                 }
 
                 if (angular.isUndefined(coords.y2)) {
-                    coords.y2 = realHeight;
+                    coords.y2 = scope.imageSize.height;
                 }
 
-                coords.x1 = Math.round(coords.x1 * width / realWidth);
-                coords.x2 = Math.round(coords.x2 * width / realWidth);
-                coords.y1 = Math.round(coords.y1 * height / realHeight);
-                coords.y2 = Math.round(coords.y2 * height / realHeight);
+                coords.x1 = Math.round(coords.x1 * width / scope.imageSize.width);
+                coords.x2 = Math.round(coords.x2 * width / scope.imageSize.width);
+                coords.y1 = Math.round(coords.y1 * height / scope.imageSize.height);
+                coords.y2 = Math.round(coords.y2 * height / scope.imageSize.height);
 
                 update(coords.x1, coords.y1, coords.x2, coords.y2);
             }
 
             function getRealCoords() {
-                var realHeight = scope.$parent.image.naturalHeight,
-                    realWidth = scope.$parent.image.naturalWidth,
-                    height = element.css('height').replace('px', ''),
+                var height = element.css('height').replace('px', ''),
                     width  = element.css('width').replace('px', '');
 
                 return {
-                    x1: Math.round(selector.x1 * realWidth / width),
-                    y1: Math.round(selector.y1 * realHeight / height),
-                    x2: Math.round(selector.x2 * realWidth / width),
-                    y2: Math.round(selector.y2 * realHeight / height)
+                    x1: Math.round(selector.x1 * scope.imageSize.width / width),
+                    y1: Math.round(selector.y1 * scope.imageSize.height / height),
+                    x2: Math.round(selector.x2 * scope.imageSize.width / width),
+                    y2: Math.round(selector.y2 * scope.imageSize.height / height)
                 };
             }
 
             selector.setRealCoords = setRealCoords;
             selector.getRealCoords = getRealCoords;
 
-            function initRealCoords() {
+            // Init
+            function initSelector() {
+                if (angular.isUndefined(scope.imageSize.width) || angular.isUndefined(scope.imageSize.height)) {
+                    scope.imageSize = {
+                        width: scope.$parent.image.naturalWidth,
+                        height: scope.$parent.image.naturalHeight
+                    }
+                }
                 if (selector.enabled) {
                     scope.$apply(function() {
                         setRealCoords(scope.realCoords);
@@ -619,9 +624,9 @@ app.directive('mrImageSelector', function(){
 
             if (image[0].complete && image[0].naturalWidth > 0) {
                 console.log('load image from cache');
-                initRealCoords();
+                initSelector();
             } else {
-                scope.$parent.setLoadedCallback(initRealCoords.bind(this));
+                scope.$parent.setLoadedCallback(initSelector.bind(this));
                 //image.on('load', function () {
                 //    console.log('load image');
                 //    initRealCoords();
